@@ -262,22 +262,27 @@ def pantalla_pacientes(df: pd.DataFrame):
             edad_min, edad_max = int(df['Edad'].min()), int(df['Edad'].max())
             rango_edad = st.slider("Rango de edad:", edad_min, edad_max, (edad_min, edad_max))
     
-    # Aplicar filtros
+# ----------------- APLICAR FILTROS ----------------- #
     df_filtrado = df.copy()
-    
+  
     if busqueda:
         # Construimos una máscara OR entre las 3 columnas
         mask = (
         df_filtrado["Nombre"].str.contains(busqueda, case=False, na=False) |
         df_filtrado["Rut"].astype(str).str.contains(busqueda, case=False, na=False) |
         df_filtrado["Teléfono"].astype(str).str.contains(busqueda, case=False, na=False))
-
-    df_filtrado = df_filtrado[mask]    
-    if filtro_tipo != "Todos":
+        df_filtrado = df_filtrado[mask]    
+    
+  if filtro_tipo != "Todos":
         df_filtrado = df_filtrado[df_filtrado['Tipo_Lente'] == filtro_tipo]
     
     if filtro_armazon != "Todos":
-# ----------------- FILTRO DE EDAD ----------------- #
+        df_filtrado = df.copy()
+
+    # Filtro por tipo de lente
+    if filtro_tipo != "Todos":
+        df_filtrado = df_filtrado[df_filtrado['Tipo_Lente'] == filtro_tipo]
+  
     if 'rango_edad' in locals():
         df_filtrado = df_filtrado[
         (df_filtrado['Edad'] >= rango_edad[0]) &

@@ -173,7 +173,7 @@ def generar_pdf_receta(paciente: Dict[str, Any]) -> BytesIO:
 
 # ========== INTERFAZ GRÁFICA ==========
 def mostrar_header():
-    st.image("logo.png", use_column_width=True)
+    st.image("logo.png", use_container_width=True)
     st.markdown(
         "<h2 style='text-align:center;'>👓 Sistema de Gestión BMA Ópticas</h2>",
         unsafe_allow_html=True

@@ -266,8 +266,8 @@ def pantalla_pacientes(df: pd.DataFrame):
     df_filtrado = df.copy()
     
     if busqueda:
-    # Construimos una máscara OR entre las 3 columnas
-    mask = (
+        # Construimos una máscara OR entre las 3 columnas
+        mask = (
         df_filtrado["Nombre"].str.contains(busqueda, case=False, na=False) |
         df_filtrado["Rut"].astype(str).str.contains(busqueda, case=False, na=False) |
         df_filtrado["Teléfono"].astype(str).str.contains(busqueda, case=False, na=False))
@@ -302,7 +302,7 @@ def pantalla_pacientes(df: pd.DataFrame):
     else:
         st.warning("No se encontraron pacientes con los filtros aplicados")
 
-def pantalla_ventas(df: pd.DataFrame):
+    def pantalla_ventas(df: pd.DataFrame):
     """Análisis de ventas y finanzas"""
     st.subheader("💰 Gestión de Ventas")
     
@@ -310,7 +310,7 @@ def pantalla_ventas(df: pd.DataFrame):
         st.warning("⚠️ No hay datos de ventas")
         return
     
-    df_ventas = df[df['Valor'].notna() & (df['Valor'] > 0)]
+        df_ventas = df[df['Valor'].notna() & (df['Valor'] > 0)]
     if df_ventas.empty:
         st.warning("⚠️ No hay ventas válidas registradas")
         return
@@ -362,18 +362,18 @@ def pantalla_ventas(df: pd.DataFrame):
         with tab2:
             st.bar_chart(ventas_mensuales['Pacientes'])
 
-def pantalla_reportes(df: pd.DataFrame):
-    """Reportes analíticos y gestión de recetas"""
-    st.subheader("📊 Reportes Analíticos")
+    def pantalla_reportes(df: pd.DataFrame):
+        """Reportes analíticos y gestión de recetas"""
+        st.subheader("📊 Reportes Analíticos")
     
     if df.empty:
         st.warning("⚠️ No hay datos para reportar")
         return
     
     # Filtro de fechas
-    st.sidebar.subheader("Filtros de Reporte")
-    fecha_min = df['Última_visita'].min().to_pydatetime()
-    fecha_max = df['Última_visita'].max().to_pydatetime()
+        st.sidebar.subheader("Filtros de Reporte")
+        fecha_min = df['Última_visita'].min().to_pydatetime()
+        fecha_max = df['Última_visita'].max().to_pydatetime()
     
     rango_fechas = st.sidebar.date_input(
         "Rango de fechas:",
@@ -407,8 +407,8 @@ def pantalla_reportes(df: pd.DataFrame):
                     'Promedio': '${:,.0f}'
                 }),
                 height=400)
-        with col2:
-            st.bar_chart(ventas_tipo['Total'])
+    with col2:
+        st.bar_chart(ventas_tipo['Total'])
     else:
         st.warning("No hay ventas en el período seleccionado")
     
@@ -424,11 +424,11 @@ def pantalla_reportes(df: pd.DataFrame):
         return
     
     # Búsqueda de recetas
-    busqueda = st.text_input("Buscar receta por nombre o RUT:")
+        busqueda = st.text_input("Buscar receta por nombre o RUT:")
     if busqueda:
         df_recetas = df_recetas[
-            df_recetas['Nombre'].str.contains(busqueda, case=False, na=False) |
-            df_recetas['Rut'].str.contains(busqueda, case=False, na=False)]
+        df_recetas['Nombre'].str.contains(busqueda, case=False, na=False) |
+        df_recetas['Rut'].str.contains(busqueda, case=False, na=False)]
     
     # Mostrar recetas
     for _, paciente in df_recetas.iterrows():

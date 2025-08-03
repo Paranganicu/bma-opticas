@@ -15,10 +15,18 @@ st.set_page_config(page_title="BMA Ópticas", page_icon="👓", layout="wide")
 
 # --- LOGO ---
 st.image("logo_bma_header.png", use_column_width=True)
-st.markdown("<h1 style='text-align: center;'>👓 Sistema de Gestión BMA Ópticas</h1>", unsafe_allow_html=True)
-st.title("👓 Sistema de Gestión BMA Ópticas")
-st.markdown("### *Cuidamos tus ojos, cuidamos de ti.*")
 
+# --- TÍTULO PRINCIPAL ---
+st.markdown(
+    "<h1 style='text-align: center;'>👓 Sistema de Gestión BMA Ópticas</h1>", 
+    unsafe_allow_html=True
+)
+
+# --- SUBTÍTULO ---
+st.markdown(
+    "<h3 style='text-align: center; color: gray;'>Cuidamos tus ojos, cuidamos de ti.</h3>", 
+    unsafe_allow_html=True
+)
 # --- MENÚ LATERAL ---
 menu = st.sidebar.radio("📂 Menú", ["🏠 Inicio", "👁 Pacientes", "💰 Ventas", "📊 Reportes", "⚠️ Alertas"])
 

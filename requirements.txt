@@ -1,5 +1,5 @@
-streamlit>=1.30.0
+streamlit==1.32.2
 pandas
-openpyxl
-python-magic
-reportlab
+openpyxl        # lectura/escritura Excel
+python-magic    # detección MIME  (en Streamlit Cloud sí funciona)
+reportlab       # PDF recetas

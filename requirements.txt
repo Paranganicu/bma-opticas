@@ -1,6 +1,5 @@
 streamlit>=1.30.0
 pandas
-openpyxl         # para leer Excel
-python-magic     # validación MIME  – en Streamlit Cloud funciona
-reportlab        # PDF de recetasstreamlit
-
+openpyxl
+python-magic
+reportlab

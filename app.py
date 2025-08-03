@@ -5,7 +5,7 @@ import pandas as pd
 st.set_page_config(page_title="BMA Ópticas", page_icon="👓", layout="wide")
 
 # --- LOGO ---
-st.image("logo.png", width=250)
+st.image("Logotipo BmA.png", width=250)
 st.title("👓 Sistema de Gestión BMA Ópticas")
 st.markdown("### *Cuidamos tus ojos, cuidamos de ti.*")
 

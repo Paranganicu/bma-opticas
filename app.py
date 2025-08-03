@@ -9,7 +9,7 @@ try:
     st.dataframe(df.head())
 
 except FileNotFoundError:
-    st.error("📂 No se encontró el archivo Pacientes.xlsx en el repositorio.")›
+    st.error("📂 No se encontró el archivo Pacientes.xlsx en el repositorio.")
     df = pd.DataFrame()  # DataFrame vacío para evitar errores 
 
 # --- CONFIGURACIÓN DEL SISTEMA ---

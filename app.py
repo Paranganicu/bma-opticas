@@ -138,7 +138,7 @@ def registrar_venta(df):
             armazon = st.text_input("Armazón")
             cristales = st.text_input("Cristales")
             valor = st.number_input("Valor venta*", 0, step=5000, format="%i")
-            f_pago = st.selectbox("Forma de pago", ["Efectivo", "Tarjeta", "Transferencia"])
+            f_pago = st.selectbox("Forma de pago", ["Efectivo", "T. Credito", "T. Debito"])
             fecha = st.date_input("Fecha de venta", dt.date.today())
 
         st.markdown("##### Datos ópticos (opcional)")

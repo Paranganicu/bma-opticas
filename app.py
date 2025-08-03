@@ -262,6 +262,9 @@ def pantalla_inicio():
     st.write(df.tail(5))
 
 # ══════════════════ MAIN ══════════════════
+# Siempre tener un DataFrame disponible para cálculos globales
+df = leer_ventas()
+
 header()
 menu = st.sidebar.radio("Menú", ["🏠 Inicio", "💰 Registrar venta", "👁️ Pacientes", "📊 Reportes"])
 

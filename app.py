@@ -196,7 +196,7 @@ def registrar_venta(df):
 
     guardar_datos(df)
     st.success("Venta registrada ✅")
-    st.experimental_rerun()            # recarga pantalla con DF actualizado
+    st.rerun()            # recarga pantalla con DF actualizado
     return df
 
 # ───── Pantalla Pacientes ───────────────────────────────────

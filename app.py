@@ -1,226 +1,221 @@
+"""BMA Ópticas – versión unificada
+---------------------------------
+• Punto único de ingreso = módulo **Ventas** (formulario completo)
+• Validaciones y normalización (RUT, nombre, valor numérico…)
+• `st.rerun()` en lugar de API experimental
+"""
+
 import os, re, uuid, logging, datetime as dt
 from io import BytesIO
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import pandas as pd
 import streamlit as st
 from html import escape
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-import magic                       # ok en Streamlit Cloud
+import magic                             # validar MIME en Streamlit Cloud
 
-# ─────────────────── CONFIG GLOBAL ───────────────────
-st.set_page_config(page_title="BMA Ópticas", page_icon="👓", layout="wide")
-logging.basicConfig(filename="app.log",
-                    level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s")
+# ╔════════════ CONFIG GLOBAL ════════════╗
+st.set_page_config("BMA Ópticas", "👓", layout="wide")
+logging.basicConfig(filename="app.log", level=logging.INFO,
+                    format="%(asctime)s – %(levelname)s – %(message)s")
 
-COLUMNAS_OPTICAS = ["OD_SPH","OD_CYL","OD_EJE","OI_SPH","OI_CYL","OI_EJE",
-                    "DP_Lejos","DP_CERCA","ADD"]
-MIME_VALIDOS = ["application/vnd.ms-excel",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+COLUM_OPT = [
+    "OD_SPH","OD_CYL","OD_EJE","OI_SPH","OI_CYL","OI_EJE",
+    "DP_Lejos","DP_CERCA","ADD"
+]
+MIME_XLSX = {
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+ARCHIVO_XLSX = "Pacientes.xlsx"
 
-# ─────────────────── UTILIDADES ───────────────────
-def validar_rut_completo(rut: str) -> bool:
-    try:
-        rut = rut.upper().replace(".","").replace("-","")
-        if not re.match(r"^[0-9]{7,8}[0-9K]$", rut):
-            return False
-        cuerpo, dv = rut[:-1], rut[-1]
-        suma, fac = 0, 2
-        for c in reversed(cuerpo):
-            suma += int(c) * fac
-            fac = 2 if fac == 7 else fac + 1
-        dv_calc = 11 - (suma % 11)
-        dv_calc = {10:"K", 11:"0"}.get(dv_calc, str(dv_calc))
-        return dv == dv_calc
-    except Exception as e:
-        logging.error(f"valRUT {rut}: {e}")
+# ╔════════════ UTILIDADES ════════════╗
+RUT_RE = re.compile(r"^([0-9]{1,3}(?:\.[0-9]{3})*)\-([0-9Kk])$")
+
+
+def validar_rut(rut: str) -> bool:
+    """Valida RUT chileno con formato 12.345.678-5 o 12345678-5"""
+    rut = rut.upper().strip()
+    m = RUT_RE.match(rut)
+    if not m:
         return False
+    cuerpo = m.group(1).replace(".", "")
+    dv_ing = m.group(2)
+    suma, fac = 0, 2
+    for d in reversed(cuerpo):
+        suma += int(d) * fac
+        fac = 2 if fac == 7 else fac + 1
+    dv_calc = 11 - (suma % 11)
+    dv_calc = {10: "K", 11: "0"}.get(dv_calc, str(dv_calc))
+    return dv_ing == dv_calc
 
-def enmascarar_rut(rut: str) -> str:
-    if "-" not in rut: return rut
-    cuerpo, dv = rut.split("-")
-    if len(cuerpo) > 4: cuerpo = f"{cuerpo[:-4]}****"
+
+def normalizar_rut(rut: str) -> str:
+    """Devuelve el RUT formateado con puntos y guion (XX.XXX.XXX‐DV)"""
+    rut = rut.upper().replace(".", "").replace("-", "")
+    cuerpo, dv = rut[:-1], rut[-1]
+    cuerpo = f"{int(cuerpo):,}".replace(",", ".")  # agrega puntos
     return f"{cuerpo}-{dv}"
 
-def es_excel_valido(path:str)->bool:
-    try:  return magic.from_file(path, mime=True) in MIME_VALIDOS
-    except Exception as e:
-        logging.error(f"MIME: {e}"); return False
 
-# ─────────────────── DATA ───────────────────
-@st.cache_data(ttl=3600, hash_funcs={pd.DataFrame:lambda _:None})
-def cargar_datos()->pd.DataFrame:
-    if not os.path.exists("Pacientes.xlsx"):
-        st.error("❌ Falta 'Pacientes.xlsx'"); return pd.DataFrame()
-    if not es_excel_valido("Pacientes.xlsx"):
-        st.error("❌ El archivo no es Excel válido"); return pd.DataFrame()
+def enmascarar_rut(rut: str) -> str:
+    if "-" not in rut:
+        return rut
+    cuerpo, dv = rut.split("-")
+    cuerpo = cuerpo[:-4] + "****" if len(cuerpo) > 4 else cuerpo
+    return f"{cuerpo}-{dv}"
+
+
+def excel_valido(path: str) -> bool:
     try:
-        df = pd.read_excel("Pacientes.xlsx").copy()
-        df.columns = df.columns.str.strip()
-        if "Rut" in df.columns:
-            df["Rut_Válido"] = df["Rut"].astype(str).apply(validar_rut_completo)
-            if not df["Rut_Válido"].all():
-                st.warning("⚠️ Hay RUTs inválidos en la base")
-        if "Última_visita" in df.columns:
-            df["Última_visita"] = pd.to_datetime(df["Última_visita"], errors="coerce")
-        if "Valor" in df.columns:
-            df["Valor"] = pd.to_numeric(df["Valor"], errors="coerce").fillna(0)
-        for col in COLUMNAS_OPTICAS:
-            if col in df.columns:
-                df[col] = df[col].fillna("").astype(str).str.strip()
-        logging.info(f"Cargados {len(df)} registros")
-        return df
+        return magic.from_file(path, mime=True) in MIME_XLSX
     except Exception as e:
-        logging.critical(e, exc_info=True)
-        st.error(f"❌ Error crítico cargando datos: {e}")
-        return pd.DataFrame()
+        logging.error(f"MIME error: {e}")
+        return False
 
-# ─────────────────── PDF ───────────────────
-def generar_pdf_receta(pac:Dict[str,Any])->BytesIO:
-    tmp, buf = f"tmp_{uuid.uuid4()}.pdf", BytesIO()
+
+# ╔════════════ DATA ════════════╗
+@st.cache_data(ttl=3600, hash_funcs={pd.DataFrame: lambda _: None})
+def cargar_datos() -> pd.DataFrame:
+    if not os.path.exists(ARCHIVO_XLSX):
+        return pd.DataFrame()
+    if not excel_valido(ARCHIVO_XLSX):
+        st.error("Archivo XLSX inválido")
+        return pd.DataFrame()
+    df = pd.read_excel(ARCHIVO_XLSX)
+    df.columns = df.columns.str.strip()
+    # normalizaciones
+    if "Rut" in df:
+        df["Rut"] = df["Rut"].astype(str).apply(normalizar_rut)
+        df["Rut_V"] = df["Rut"].apply(validar_rut)
+    if "Nombre" in df:
+        df["Nombre"] = df["Nombre"].str.title().str.strip()
+    if "Valor" in df:
+        df["Valor"] = pd.to_numeric(df["Valor"], errors="coerce").fillna(0)
+    if "Última_visita" in df:
+        df["Última_visita"] = pd.to_datetime(df["Última_visita"], errors="coerce")
+    for c in COLUM_OPT:
+        if c in df:
+            df[c] = df[c].fillna("").astype(str)
+    return df
+
+
+def guardar_datos(df: pd.DataFrame):
+    try:
+        df.to_excel(ARCHIVO_XLSX, index=False)
+        logging.info("Base actualizada")
+    except Exception as e:
+        st.warning(f"No se pudo guardar: {e}")
+
+
+# ╔════════════ PDF ════════════╗
+
+def pdf_receta(p: Dict[str, Any]) -> BytesIO:
+    tmp = f"tmp_{uuid.uuid4()}.pdf"
+    buf = BytesIO()
     try:
         c = canvas.Canvas(tmp, pagesize=letter)
-        c.setTitle(f"Receta {pac.get('Nombre','')}")
-        c.setFont("Helvetica-Bold", 16); c.drawString(72,750,"BMA Ópticas – Receta")
-        c.setFont("Helvetica",12)
-        c.drawString(72,730,f"Paciente: {escape(pac.get('Nombre',''))}")
-        c.drawString(72,712,f"RUT: {enmascarar_rut(pac.get('Rut',''))}")
-        c.drawString(400,712,dt.datetime.now().strftime("%d/%m/%Y"))
+        c.setTitle(f"Receta – {p.get('Nombre','')}")
+        c.setFont("Helvetica-Bold", 14); c.drawString(72, 750, "BMA Ópticas – Receta Óptica")
+        c.setFont("Helvetica", 11)
+        c.drawString(72, 730, f"Paciente: {escape(p.get('Nombre',''))}")
+        c.drawString(72, 712, f"RUT: {enmascarar_rut(p.get('Rut',''))}")
+        c.drawString(400, 712, dt.datetime.now().strftime("%d/%m/%Y"))
         y = 680
-        c.setFont("Helvetica-Bold",12); c.drawString(72,y,"OD / OI   ESF   CIL   EJE"); y -= 20
-        c.setFont("Helvetica",12)
-        c.drawString(72,y,f"OD: {pac.get('OD_SPH','')}  {pac.get('OD_CYL','')}  {pac.get('OD_EJE','')}")
-        y -= 20
-        c.drawString(72,y,f"OI: {pac.get('OI_SPH','')}  {pac.get('OI_CYL','')}  {pac.get('OI_EJE','')}")
-        y -= 30
-        for label in ["DP_Lejos","DP_CERCA","ADD"]:
-            if pac.get(label): c.drawString(72,y,f"{label}: {pac[label]}"); y-=18
-        c.line(400,100,520,100); c.drawString(430,85,"Firma Óptico")
-        c.save(); buf.write(open(tmp,"rb").read())
-    except Exception as e:
-        logging.error(f"PDF: {e}", exc_info=True)
+        c.setFont("Helvetica-Bold", 11); c.drawString(72, y, "Parámetro     OD        OI"); y -= 18
+        for lab in [("ESF", "OD_SPH", "OI_SPH"), ("CIL", "OD_CYL", "OI_CYL"), ("EJE", "OD_EJE", "OI_EJE")]:
+            c.drawString(72, y, f"{lab[0]:<9}{p.get(lab[1],''):<10}{p.get(lab[2],'')}"); y-=16
+        y -= 12
+        for extra in ["DP_Lejos","DP_CERCA","ADD"]:
+            if p.get(extra):
+                c.drawString(72, y, f"{extra}: {p[extra]}"); y -= 16
+        c.line(400, 100, 520, 100); c.drawString(430, 85, "Firma Óptico")
+        c.save(); buf.write(open(tmp, "rb").read())
     finally:
         if os.path.exists(tmp): os.remove(tmp)
     buf.seek(0); return buf
 
-# ─────────────────── UI – HEADER ───────────────────
-def header():
+
+# ╔════════════ UI COMPONENTES ════════════╗
+
+def encabezado():
     st.image("logo.png", use_container_width=True)
-    st.markdown("<h2 style='text-align:center;'>👓 Sistema de Gestión BMA Ópticas</h2>", unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align:center;color:gray;'>Cuidamos tus ojos, cuidamos de ti</h4>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center'>👓 Sistema de Gestión BMA Ópticas</h2>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align:center;color:gray'>Cuidamos tus ojos, cuidamos de ti</h4>", unsafe_allow_html=True)
 
-# ─────────────────── PANTALLAS ───────────────────
-def pantalla_inicio(df:pd.DataFrame):
-    st.header("🏠 Inicio")
-    if df.empty:
-        st.info("Carga 'Pacientes.xlsx' para empezar"); return
-    c1,c2,c3 = st.columns(3)
-    c1.metric("Pacientes", len(df))
-    c2.metric("Con receta", df[COLUMNAS_OPTICAS[0]].notna().sum())
-    c3.metric("Ventas", f"${df['Valor'].sum():,.0f}")
-    st.dataframe(df.head())
 
-def pantalla_pacientes(df:pd.DataFrame):
-    st.header("👁️ Pacientes")
-    if df.empty: st.warning("No hay datos"); return
-    # Filtros
-    with st.expander("Filtros"):
-        q      = st.text_input("Nombre, RUT o Teléfono")
-        tipo   = st.selectbox("Tipo lente", ["Todos"]+sorted(df["Tipo_Lente"].dropna().unique()))
-        arma   = st.selectbox("Armazón", ["Todos"]+sorted(df["Armazon"].dropna().unique()))
-        r_edad = st.slider("Edad", int(df["Edad"].min()), int(df["Edad"].max()),
-                           (int(df["Edad"].min()), int(df["Edad"].max())))
-    # Aplicar filtros
-    df_f = df.copy()
-    if q:
-        m = (df_f["Nombre"].str.contains(q,case=False,na=False) |
-             df_f["Rut"].astype(str).str.contains(q,case=False,na=False) |
-             df_f["Teléfono"].astype(str).str.contains(q,case=False,na=False))
-        df_f = df_f[m]
-    if tipo!="Todos": df_f = df_f[df_f["Tipo_Lente"]==tipo]
-    if arma!="Todos": df_f = df_f[df_f["Armazon"]==arma]
-    df_f = df_f[(df_f["Edad"]>=r_edad[0]) & (df_f["Edad"]<=r_edad[1])]
-    st.success(f"{len(df_f)} resultados"); st.dataframe(df_f)
+# ╔════════════ MÓDULO VENTAS (Ingreso + dashboard) ════════════╗
 
-    # ───── Formulario de alta ─────
-    with st.expander("➕ Agregar nuevo paciente"):
-        with st.form("alta_paciente", clear_on_submit=True):
-            c1,c2 = st.columns(2)
-            with c1:
-                nombre  = st.text_input("Nombre*", max_chars=60)
-                rut     = st.text_input("RUT*", max_chars=12)
-                edad    = st.number_input("Edad*", 0,120,30)
-                telefono= st.text_input("Teléfono")
-            with c2:
-                tipo_lente   = st.selectbox("Tipo de lente", ["Monofocal","Bifocal","Progresivo"])
-                valor        = st.number_input("Valor venta", 0, step=1000)
-                ultima_visita= st.date_input("Última visita", dt.date.today())
-            ok = st.form_submit_button("Guardar")
+def modulo_ventas(df: pd.DataFrame):
+    st.header("💰 Registro de Venta + Receta")
 
-        if ok:
-            if not (nombre and rut and validar_rut_completo(rut)):
-                st.error("Completa nombre y RUT válido")
-            else:
-                nueva = {"Nombre":nombre,"Rut":rut,"Edad":edad,"Teléfono":telefono,
-                         "Tipo_Lente":tipo_lente,"Valor":valor,
-                         "Última_visita":pd.to_datetime(ultima_visita)}
-                df.loc[len(df)] = nueva
-                try:
-                    df.to_excel("Pacientes.xlsx", index=False)
-                    st.success("Paciente agregado ✅")
-                except Exception as e:
-                    st.warning(f"No se pudo guardar en disco: {e}")
-                st.experimental_rerun()
+    with st.form("form_venta", clear_on_submit=True):
+        # ── secciones
+        st.subheader("Datos del paciente ✍🏻")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            rut_in = st.text_input("RUT* (con guion)")
+        with col2:
+            nombre_in = st.text_input("Nombre completo*")
+        with col3:
+            edad_in = st.number_input("Edad*", 0, 120, step=1, format="%d")
+        tel_in = st.text_input("Teléfono / Celular")
 
-def pantalla_ventas(df:pd.DataFrame):
-    st.header("💰 Ventas")
-    v = df[df["Valor"]>0]
-    if v.empty: st.info("Sin ventas"); return
-    c1,c2,c3=st.columns(3)
-    c1.metric("Total", f"${v['Valor'].sum():,.0f}")
-    c2.metric("Ticket medio", f"${v['Valor'].mean():,.0f}")
-    c3.metric("Transacciones", len(v))
+        st.subheader("Venta 🛒")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            tipo_lente = st.selectbox("Tipo de lente", ["Monofocal", "Bifocal", "Progresivo"])
+        with c2:
+            armazon = st.text_input("Armazón")
+        with c3:
+            valor = st.number_input("Valor venta $", 0, step=1000, format="%d")
+        forma = st.selectbox("Forma de pago", ["Efectivo", "Tarjeta", "Transferencia"])
+        fecha_venta = st.date_input("Fecha", dt.date.today())
 
-def pantalla_reportes(df:pd.DataFrame):
-    st.header("📊 Reportes")
-    if df.empty: st.warning("No hay datos"); return
-    v = df[df["Valor"]>0]
-    if not v.empty:
-        st.subheader("Ventas por tipo de lente")
-        st.bar_chart(v.groupby("Tipo_Lente")["Valor"].sum())
-    st.subheader("Recetas")
-    con = df[df[COLUMNAS_OPTICAS[0]].notna()]
-    for idx, pac in con.iterrows():
-        with st.expander(f"{pac['Nombre']} – {enmascarar_rut(pac['Rut'])}"):
-            st.write(pac[COLUMNAS_OPTICAS[:6]].to_frame().T)
-            if st.button("📄 PDF", key=f"pdf_{idx}"):
-                pdf = generar_pdf_receta(pac)
-                st.download_button("Descargar", data=pdf,
-                                   file_name=f"Receta_{pac['Nombre']}.pdf",
-                                   mime="application/pdf", key=f"dl_{idx}")
+        st.subheader("Receta 👓 (opcional)")
+        r1, r2, r3 = st.columns(3)
+        with r1:
+            od_sph = st.text_input("OD ESF")
+            oi_sph = st.text_input("OI ESF")
+        with r2:
+            od_cyl = st.text_input("OD CIL")
+            oi_cyl = st.text_input("OI CIL")
+        with r3:
+            od_eje = st.text_input("OD EJE")
+            oi_eje = st.text_input("OI EJE")
+        c_dp1, c_dp2, c_add = st.columns(3)
+        with c_dp1:
+            dp_lejos = st.text_input("DP Lejos")
+        with c_dp2:
+            dp_cerca = st.text_input("DP Cerca")
+        with c_add:
+            add = st.text_input("ADD")
 
-def pantalla_alertas(df:pd.DataFrame):
-    st.header("⚠️ Alertas")
-    if df.empty: st.info("No hay datos"); return
-    atras = df[df["Última_visita"] < dt.datetime.now()-dt.timedelta(days=365)]
-    if not atras.empty:
-        st.warning(f"{len(atras)} pacientes sin control >1 año")
-        st.dataframe(atras[["Nombre","Última_visita","Teléfono"]])
+        enviar = st.form_submit_button("💾 Guardar venta")
 
-# ─────────────────── MAIN ───────────────────
-def main():
-    header()
-    with st.spinner("Cargando…"):
-        df = cargar_datos()
-    menu = st.sidebar.radio("Menú", ["🏠 Inicio","👁️ Pacientes","💰 Ventas","📊 Reportes","⚠️ Alertas"])
-    if   menu=="🏠 Inicio":   pantalla_inicio(df)
-    elif menu=="👁️ Pacientes": pantalla_pacientes(df)
-    elif menu=="💰 Ventas":   pantalla_ventas(df)
-    elif menu=="📊 Reportes": pantalla_reportes(df)
-    else:                     pantalla_alertas(df)
-    st.sidebar.markdown("---"); st.sidebar.write("BMA Ópticas © 2025")
+    # ── procesamiento
+    if enviar:
+        if not (rut_in and nombre_in and validar_rut(rut_in)):
+            st.error("RUT en formato 12.345.678-9 y nombre obligatorios")
+            st.stop()
 
-if __name__ == "__main__":
-    main()
+        rut_norm = normalizar_rut(rut_in)
+        nombre_norm = nombre_in.title().strip()
+
+        # Si paciente existe → actualizamos datos básicos
+        if (df["Rut"] == rut_norm).any():
+            idx = df[df["Rut"] == rut_norm].index[0]
+            df.loc[idx, ["Nombre", "Edad", "Teléfono"]] = [nombre_norm, edad_in, tel_in]
+        else:
+            nueva_fila = {
+                "Nombre": nombre_norm, "Rut": rut_norm, "Edad": edad_in,
+                "Teléfono": tel_in, "Tipo_Lente": tipo_lente, "Armazon": armazon,
+                "Valor": valor, "FORMA_PAGO": forma,
+                "Última_visita": pd.to_datetime(fecha_venta),
+                "OD_SPH": od_sph, "OD_CYL": od_cyl, "OD_EJE": od_eje,
+                "OI_SPH": oi_sph, "OI_CYL": oi_cyl, "OI_EJE": oi_eje,
+                "DP_Lejos": dp_lejos, "DP_CERCA": dp_cerca, "ADD": add
+            }
+            df = pd.concat([df, pd.DataFrame([

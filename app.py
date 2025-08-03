@@ -14,7 +14,8 @@ import pandas as pd
 st.set_page_config(page_title="BMA Ópticas", page_icon="👓", layout="wide")
 
 # --- LOGO ---
-st.image("Logotipo BmA.png", width=250)
+st.image("logo_bma_header.png", use_column_width=True)
+st.markdown("<h1 style='text-align: center;'>👓 Sistema de Gestión BMA Ópticas</h1>", unsafe_allow_html=True)
 st.title("👓 Sistema de Gestión BMA Ópticas")
 st.markdown("### *Cuidamos tus ojos, cuidamos de ti.*")
 

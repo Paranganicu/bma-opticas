@@ -31,7 +31,9 @@ menu = st.sidebar.radio("📂 Menú", ["🏠 Inicio", "👁 Pacientes", "💰 Ve
 # --- SECCIÓN INICIO ---
 if menu == "🏠 Inicio":
     st.subheader("Bienvenido al Sistema BMA Ópticas")
-    st.write("Aquí podrás gestionar pacientes, recetas, ventas y generar reportes automáticos.")
+    st.write("📋 Columnas detectadas:", df.columns.tolist())
+st.dataframe(df.head())
+st.write("Aquí podrás gestionar pacientes, recetas, ventas y generar reportes automáticos.")
 
 # --- PACIENTES ---
 elif menu == "👁 Pacientes":

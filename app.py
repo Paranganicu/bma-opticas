@@ -265,13 +265,12 @@ def pantalla_pacientes(df: pd.DataFrame):
     # Aplicar filtros
     df_filtrado = df.copy()
     
-  if busqueda:
+    if busqueda:
     # Construimos una máscara OR entre las 3 columnas
     mask = (
         df_filtrado["Nombre"].str.contains(busqueda, case=False, na=False) |
         df_filtrado["Rut"].astype(str).str.contains(busqueda, case=False, na=False) |
-        df_filtrado["Teléfono"].astype(str).str.contains(busqueda, case=False, na=False)
-    )
+        df_filtrado["Teléfono"].astype(str).str.contains(busqueda, case=False, na=False))
 
     df_filtrado = df_filtrado[mask]    
     if filtro_tipo != "Todos":

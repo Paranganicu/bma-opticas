@@ -129,9 +129,23 @@ def registrar_venta(df):
     with st.form("venta"):
         c1, c2 = st.columns(2)
         with c1:
-            rut = st.text_input("RUT* (con puntos y guion)").strip()
-            nombre = st.text_input("Nombre*").strip()
-            edad = st.number_input("Edad*", 0, 120, format="%i")  # sin +/- increment
+            rut_input = st.text_input(
+    "RUT*  (sólo números, DV opcional K)",                     # ← texto ayuda
+    max_chars=12)
+
+# …
+
+if submitted:                                                 # o if ok:
+    rut_fmt = rut_limpio(rut_input)
+    if rut_fmt is None:
+        st.error("❌ RUT inválido")
+        st.stop()                                             # corta aquí
+
+    # …y ya usas rut_fmt para guardar/mostrar
+    nueva_fila = {
+        "Rut": rut_fmt,                                       # ← aquí
+        "Nombre": nombre.title().strip(),
+        "Edad": edad,
             telefono = st.text_input("Teléfono")
         with c2:
             tipo_lente = st.selectbox("Tipo de lente", ["Monofocal", "Bifocal", "Progresivo"])

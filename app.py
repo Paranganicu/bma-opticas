@@ -16,7 +16,7 @@ st.set_page_config(page_title="BMA Ópticas", page_icon="👓", layout="wide")
 # --- LOGO ---
 st.image("logo.png", use_container_width=True)# --- TÍTULO PRINCIPAL ---
 st.markdown(
-    "<h1 style='text-align: center;'>👓 Sistema de Gestión BMA Ópticas</h2>", 
+    "<h2 style='text-align: center;'>👓 Sistema de Gestión BMA Ópticas</h2>", 
     unsafe_allow_html=True
 )
 

@@ -1,4 +1,13 @@
+import pandas as pd
 import streamlit as st
+
+# === BASE DE DATOS ===
+try:
+    df = pd.read_excel("Pacientes.xlsx")
+except FileNotFoundError:
+    st.error("📁 No se encontró el archivo Pacientes.xlsx en el repositorio.")
+    df = pd.DataFrame()  # DataFrame vacío para evitar errores 
+    import streamlit as st
 import pandas as pd
 
 # --- CONFIGURACIÓN DEL SISTEMA ---

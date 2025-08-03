@@ -3,10 +3,6 @@ import streamlit as st
 
 # === BASE DE DATOS ===
 try: 
-
-
-
-    
     df = pd.read_excel("Pacientes.xlsx")
     st.subheader("📋 Vista previa de la base de datos")
     st.write("✅ Columnas detectadas:", df.columns.tolist())

@@ -25,7 +25,29 @@ st.markdown(
     "<h3 style='text-align: center; color: gray;'>Cuidamos tus ojos, cuidamos de ti.</h3>", 
     unsafe_allow_html=True
 )
-# --- MENÚ LATERAL ---
+# --- MENÚ PRINCIPAL ---
+menu = st.sidebar.radio("📂 Menú", ["🏠 Inicio", "👁 Pacientes", "💰 Ventas", "📊 Reportes", "⚠️ Alertas"])
+
+# --- PANTALLAS ---
+if menu == "🏠 Inicio":
+    st.title("🏠 Inicio")
+    st.write("Bienvenido al **Sistema de Gestión BMA Ópticas**")
+
+elif menu == "👁 Pacientes":
+    st.title("👁 Pacientes")
+    st.write("Aquí podrás gestionar la base de datos de pacientes.")
+
+elif menu == "💰 Ventas":
+    st.title("💰 Ventas")
+    st.write("Aquí se registran y visualizan las ventas.")
+
+elif menu == "📊 Reportes":
+    st.title("📊 Reportes")
+    st.write("Aquí podrás generar reportes automáticos.")
+
+elif menu == "⚠️ Alertas":
+    st.title("⚠️ Alertas")
+    st.write("Aquí aparecerán las alertas importantes.")# --- MENÚ LATERAL ---
 menu = st.sidebar.radio("📂 Menú", ["🏠 Inicio", "👁 Pacientes", "💰 Ventas", "📊 Reportes", "⚠️ Alertas"])
 
 # --- SECCIÓN INICIO ---

@@ -2,13 +2,18 @@ import pandas as pd
 import streamlit as st
 
 # === BASE DE DATOS ===
-try:
+try: 
+
+
+
+    
     df = pd.read_excel("Pacientes.xlsx")
     st.subheader("📋 Vista previa de la base de datos")
-st.write("✅ Columnas detectadas:", df.columns.tolist())
-st.dataframe(df.head())
+    st.write("✅ Columnas detectadas:", df.columns.tolist())
+    st.dataframe(df.head())
+
 except FileNotFoundError:
-    st.error("📁 No se encontró el archivo Pacientes.xlsx en el repositorio.")
+    st.error("📂 No se encontró el archivo Pacientes.xlsx en el repositorio.")›
     df = pd.DataFrame()  # DataFrame vacío para evitar errores 
 
 # --- CONFIGURACIÓN DEL SISTEMA ---

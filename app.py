@@ -1,3 +1,10 @@
+Para darte el código completo con la corrección que te mencioné, he integrado la solución directamente en el archivo original.
+
+Este código resuelve el problema potencial con la variable `rango_edad` y también ajusta la forma en que se muestran las fechas después de aplicar los filtros, asegurándose de que la aplicación sea más robusta.
+
+**Aquí tienes el código completo y corregido:**
+
+```python
 import pandas as pd
 import streamlit as st
 import datetime
@@ -70,6 +77,9 @@ def pantalla_pacientes(df):
     st.subheader("🔍 Filtros")
     col1, col2 = st.columns(2)
 
+    # Inicializamos rango_edad con un valor por defecto
+    rango_edad = None
+
     with col1:
         tipos_lente = df['Tipo_Lente'].dropna().unique()
         filtro_tipo = st.selectbox("Filtrar por tipo de lente:", ["Todos"] + list(tipos_lente))
@@ -84,13 +94,17 @@ def pantalla_pacientes(df):
     if filtro_tipo != "Todos":
         df_filtrado = df_filtrado[df_filtrado['Tipo_Lente'] == filtro_tipo]
 
-    if 'rango_edad' in locals():
+    # Ahora verificamos si rango_edad no es None
+    if rango_edad is not None:
         df_filtrado = df_filtrado[(df_filtrado['Edad'] >= rango_edad[0]) & (df_filtrado['Edad'] <= rango_edad[1])]
 
     # Mostrar filtrado
     if len(df_filtrado) != len(df):
         st.write(f"📊 Mostrando {len(df_filtrado)} de {len(df)} pacientes")
-        df_filtrado['Última_visita'] = df_filtrado['Última_visita'].dt.strftime('%d/%m/%Y')
+        # Aseguramos que la columna de fecha esté en formato de fecha antes de formatear a string
+        if 'Última_visita' in df_filtrado.columns:
+            df_filtrado['Última_visita'] = pd.to_datetime(df_filtrado['Última_visita'])
+            df_filtrado['Última_visita'] = df_filtrado['Última_visita'].dt.strftime('%d/%m/%Y')
         st.dataframe(df_filtrado[columnas], use_container_width=True)
 
 def pantalla_ventas(df):
@@ -191,3 +205,4 @@ elif menu == "📊 Reportes":
     pantalla_reportes(df)
 elif menu == "⚠️ Alertas":
     pantalla_alertas(df)
+```

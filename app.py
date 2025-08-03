@@ -1,8 +1,4 @@
-Para darte el código completo con la corrección que te mencioné, he integrado la solución directamente en el archivo original.
 
-Este código resuelve el problema potencial con la variable `rango_edad` y también ajusta la forma en que se muestran las fechas después de aplicar los filtros, asegurándose de que la aplicación sea más robusta.
-
-**Aquí tienes el código completo y corregido:**
 
 ```python
 import pandas as pd

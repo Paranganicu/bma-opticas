@@ -277,12 +277,15 @@ def pantalla_pacientes(df: pd.DataFrame):
         df_filtrado = df_filtrado[df_filtrado['Tipo_Lente'] == filtro_tipo]
     
     if filtro_armazon != "Todos":
-        df_filtrado = df_filtrado[df_filtrado['Armazon'] == filtro_armazon]
-    
-    df_filtrado = df_filtrado[
-        (df_filtrado['Edad'] >= rango_edad[0]) & 
+# ----------------- FILTRO DE EDAD ----------------- #
+    if 'rango_edad' in locals():
+        df_filtrado = df_filtrado[
+        (df_filtrado['Edad'] >= rango_edad[0]) &
         (df_filtrado['Edad'] <= rango_edad[1])
-    
+    ]
+# --------------- FIN FILTRO DE EDAD --------------- 
+  
+  #df_filtrado = df_filtrado[df_filtrado['Armazon'] == filtro_armazon]
     # Mostrar resultados
     st.write(f"📋 Mostrando {len(df_filtrado)} de {len(df)} pacientes")
     

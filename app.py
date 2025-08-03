@@ -172,7 +172,7 @@ def pantalla_pacientes(df:pd.DataFrame):
                     st.success("Paciente agregado ✅")
                 except Exception as e:
                     st.warning(f"No se pudo guardar en disco: {e}")
-                st.experimental_rerum()
+                st.experimental_rerun()
 
 def pantalla_ventas(df:pd.DataFrame):
     st.header("💰 Ventas")

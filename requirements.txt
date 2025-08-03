@@ -1,9 +1,5 @@
-streamlit>=1.32.0
+streamlit>=1.30.0
 pandas
 openpyxl
 python-magic
-python-magic-bin==0.4.15  ; platform_system=="Windows"
 reportlab
-python-dotenv
-APScheduler
-requests

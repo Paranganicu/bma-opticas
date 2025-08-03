@@ -4,11 +4,12 @@ import streamlit as st
 # === BASE DE DATOS ===
 try:
     df = pd.read_excel("Pacientes.xlsx")
+    st.subheader("📋 Vista previa de la base de datos")
+st.write("✅ Columnas detectadas:", df.columns.tolist())
+st.dataframe(df.head())
 except FileNotFoundError:
     st.error("📁 No se encontró el archivo Pacientes.xlsx en el repositorio.")
     df = pd.DataFrame()  # DataFrame vacío para evitar errores 
-    import streamlit as st
-import pandas as pd
 
 # --- CONFIGURACIÓN DEL SISTEMA ---
 st.set_page_config(page_title="BMA Ópticas", page_icon="👓", layout="wide")

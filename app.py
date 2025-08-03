@@ -1,9 +1,9 @@
 # ─────────────────────  BMA ÓPTICAS  v2.2  ─────────────────────
+"""Streamlit app: gestión de pacientes, ventas y recetas ópticas.
+   Ingreso único desde «Registrar venta».  Valida y formatea RUT
+   a «12.345.678-5» aun si el usuario escribe solo números.
 """
-Streamlit app: gestión de pacientes, ventas y recetas ópticas.
-Ingreso único desde «Registrar venta».  Valida y formatea RUT
-a «12.345.678-5» aun si el usuario escribe solo números.
-"""
+
 # === Imports =============================================================
 import os, re, uuid, logging, datetime as dt
 from io import BytesIO
@@ -39,7 +39,6 @@ MIME_EXCEL = {
 RUT_PATTERN = re.compile(r"[0-9kK\.\-]+$")
 
 def _calc_dv(cuerpo: str) -> str:
-    """Calcula dígito verificador para un cuerpo numérico."""
     s, m = 0, 2
     for c in reversed(cuerpo):
         s += int(c) * m
@@ -48,16 +47,11 @@ def _calc_dv(cuerpo: str) -> str:
     return {10: "K", 11: "0"}.get(dv, str(dv))
 
 def rut_limpio(rut_raw: str) -> str | None:
-    """
-    Devuelve RUT en formato 12.345.678-5 o None si es inválido.
-    Acepta solo números (opcional K/k) y cualquier combinación de
-    puntos/guion.
-    """
     rut_raw = rut_raw.strip().upper()
     if not RUT_PATTERN.fullmatch(rut_raw):
         return None
     txt = rut_raw.replace(".", "").replace("-", "")
-    if len(txt) < 8:                     # mínimo 7 díg. + DV
+    if len(txt) < 8:
         return None
     cuerpo, dv_in = txt[:-1], txt[-1]
     dv_calc = _calc_dv(cuerpo)
@@ -69,8 +63,10 @@ def rut_limpio(rut_raw: str) -> str | None:
 # -----------------------------------------------------------------------
 #                        Otras utilidades
 # -----------------------------------------------------------------------
+
 def enmascarar_rut(rut: str) -> str:
-    if "-" not in rut: return rut
+    if "-" not in rut:
+        return rut
     cuerpo, dv = rut.split("-")
     return f"{cuerpo[:-4]}****-{dv}" if len(cuerpo) > 4 else rut
 
@@ -109,6 +105,7 @@ def guardar_datos(df: pd.DataFrame):
 # -----------------------------------------------------------------------
 #                        PDF Receta
 # -----------------------------------------------------------------------
+
 def pdf_receta(p: Dict[str, Any]) -> BytesIO:
     tmp, buf = f"tmp_{uuid.uuid4()}.pdf", BytesIO()
     c = canvas.Canvas(tmp, pagesize=letter)
@@ -134,6 +131,7 @@ def pdf_receta(p: Dict[str, Any]) -> BytesIO:
 # -----------------------------------------------------------------------
 #                        Interfaz: encabezado
 # -----------------------------------------------------------------------
+
 def header():
     st.image("logo.png", use_container_width=True)
     st.markdown("<h2 style='text-align:center'>👓 Sistema de Gestión BMA Ópticas</h2>", unsafe_allow_html=True)
@@ -142,6 +140,7 @@ def header():
 # -----------------------------------------------------------------------
 #                        Pantalla: Inicio
 # -----------------------------------------------------------------------
+
 def pantalla_inicio(df: pd.DataFrame):
     st.header("🏠 Inicio")
     c1, c2, c3 = st.columns(3)
@@ -152,6 +151,7 @@ def pantalla_inicio(df: pd.DataFrame):
 # -----------------------------------------------------------------------
 #                        Pantalla: Registrar venta
 # -----------------------------------------------------------------------
+
 def registrar_venta(df: pd.DataFrame):
     st.header("💰 Registrar Venta")
 
@@ -161,39 +161,4 @@ def registrar_venta(df: pd.DataFrame):
             rut_in   = st.text_input("RUT* (sólo números, K opcional)")
             nom_in   = st.text_input("Nombre*")
             edad_in  = st.number_input("Edad*", 0, 120, format="%i")
-            tel_in   = st.text_input("Teléfono")
-        with c2:
-            tipo_in  = st.selectbox("Tipo de lente", ["Monofocal","Bifocal","Progresivo"])
-            arma_in  = st.text_input("Armazón")
-            cris_in  = st.text_input("Cristales")
-            valor_in = st.number_input("Valor venta*", 0, step=5000, format="%i")
-            pago_in  = st.selectbox("Forma de pago", ["Efectivo","T. Crédito","Débito"])
-            fecha_in = st.date_input("Fecha venta", dt.date.today())
-
-        st.markdown("##### Datos ópticos (opcional)")
-        o1,o2,o3 = st.columns(3)
-        with o1:
-            od_sph = st.text_input("OD ESF"); od_cyl = st.text_input("OD CIL"); od_eje = st.text_input("OD EJE")
-        with o2:
-            oi_sph = st.text_input("OI ESF"); oi_cyl = st.text_input("OI CIL"); oi_eje = st.text_input("OI EJE")
-        with o3:
-            dp_lej = st.text_input("DP Lejos")
-            dp_cer = st.text_input("DP Cerca")
-            add    = st.text_input("ADD")
-
-        ok = st.form_submit_button("Guardar")
-
-    if not ok: return df
-
-    rut_fmt = rut_limpio(rut_in)
-    if rut_fmt is None or not nom_in.strip():
-        st.error("❌ RUT inválido o nombre vacío"); return df
-
-    nom_fmt = capitalizar(nom_in)
-    existe  = df["Rut"].eq(rut_fmt).any() if "Rut" in df else False
-
-    nueva = {
-        "Rut": rut_fmt, "Nombre": nom_fmt, "Edad": edad_in, "Teléfono": tel_in,
-        "Tipo_Lente": tipo_in, "Armazon": arma_in, "Cristales": cris_in,
-        "Valor": valor_in, "FORMA_PAGO": pago_in, "Última_visita": fecha_in,
-        "OD_SPH": od_sph, "OD_C
+            tel_in   = st.text

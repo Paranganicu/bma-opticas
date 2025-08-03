@@ -129,7 +129,7 @@ def generar_pdf_receta(paciente: Dict[str, Any]) -> BytesIO:
         
         # Configuración segura del PDF
         c = canvas.Canvas(filename, pagesize=letter)
-        c.setTitle(f"Receta Óptica - {escape(str(paciente.get('Nombre´,'') or ")}")
+        c.setTitle(f"Receta Óptica - {escape(str(paciente.get('Nombre', 'Paciente sin nombre')))}")
         
         # Encabezado
         c.setFont("Helvetica-Bold", 16)

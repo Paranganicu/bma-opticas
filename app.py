@@ -196,6 +196,47 @@ def pantalla_pacientes(df: pd.DataFrame):
     st.success(f"{len(df_f)} resultados")
     st.dataframe(df_f)
 
+# --- debajo de pantalla_pacientes() ---
+with st.expander("➕ Agregar nuevo paciente"):
+    with st.form("agregar_paciente", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            nombre  = st.text_input("Nombre*", max_chars=60)
+            rut     = st.text_input("RUT*", max_chars=12)
+            edad    = st.number_input("Edad*", 0, 120, 30)
+            telefono= st.text_input("Teléfono", max_chars=20)
+        with col2:
+            tipo_lente = st.selectbox("Tipo de lente", ["Monofocal","Bifocal","Progresivo"])
+            valor      = st.number_input("Valor venta", 0, step=1000)
+            ultima_visita = st.date_input("Última visita", dt.date.today())
+        submitted = st.form_submit_button("Guardar")
+
+    if submitted:
+        if not (nombre and rut and validar_rut_completo(rut)):
+            st.error("Completa nombre y RUT válido")
+        else:
+            nueva_fila = {
+                "Nombre": nombre,
+                "Rut": rut,
+                "Edad": edad,
+                "Teléfono": telefono,
+                "Tipo_Lente": tipo_lente,
+                "Valor": valor,
+                "Última_visita": pd.to_datetime(ultima_visita)
+            }
+            # 1) añade al DataFrame en memoria
+            df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
+
+            # 2) guarda en disco (funciona en local o en un server con permiso de escritura)
+            try:
+                df.to_excel("Pacientes.xlsx", index=False)
+                st.success("Paciente agregado ✅ y base actualizada")
+            except Exception as e:
+                st.warning(f"Guardado local falló: {e}")
+                
+            # 3) refresca la tabla mostrada
+            st.experimental_rerun()
+            
 def pantalla_ventas(df: pd.DataFrame):
     st.header("💰 Ventas")
     v = df[df["Valor"] > 0]

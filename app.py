@@ -144,7 +144,7 @@ def registrar_venta(df:pd.DataFrame):
 
     guardar_df(df)
     st.success("Venta registrada ✅")
-    st.experimental_rerun()
+    st.rerun()
     return df
   # ▒▒▒ 3/3  (app.py final) ▒▒▒
 def pantalla_pacientes(df:pd.DataFrame):
